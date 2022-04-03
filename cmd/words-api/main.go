@@ -17,7 +17,8 @@ import (
 )
 
 type Word struct {
-	word string
+	Word             string `json:"word"`
+	commonalityScore int    `json: "commonalityScore`
 }
 
 func main() {
@@ -41,13 +42,18 @@ func main() {
 		word := vars["word"]
 		for _, curWord := range words {
 			if curWord == word {
-				io.WriteString(w, curWord)
-				w.WriteHeader(http.StatusOK)
+				// io.WriteString(w, curWord)
+				w.Header().Set("Content-Type", "application/json")
+				result := Word{curWord, 0}
+				w.Header().Set("Content-Type", "application/json")
+				jsonResponse, _ := json.Marshal(result)
+				w.Write(jsonResponse)
 				return
 			}
 		}
 		http.Error(w, "None found", http.StatusBadRequest)
 	}
+
 	wordsHandler := func(w http.ResponseWriter, req *http.Request) {
 		io.WriteString(w, strings.Join(words[:], "\n"))
 	}
@@ -63,12 +69,7 @@ func main() {
 		for i, v := range perm {
 				dest[v] = string(words[i])
 		}
-		// randomWord := Word{dest[0]}
-		// randomWord := Word{word:"bar"}
-		var randomWord Word
-		randomWord.word = dest[0]
-		// randomWord.word = dest[0]
-		// randomWord := dest[0]
+		randomWord := Word{dest[0], 0}
 		if hasLength {
 			length, err := strconv.Atoi(req.URL.Query().Get("length"))
 			if err != nil {
@@ -76,34 +77,17 @@ func main() {
 			}
 			for _, s := range dest {
 				if len(s) == length {
-					randomWord = Word{s}
-					// randomWord.word = s
-					// randomWord = s
+					randomWord = Word{s, 0}
 					break;
 				}
 			}
 		}
-		log.Println(randomWord)
-		jsonResponse, jsonError := json.Marshal(&randomWord)
-		log.Println(jsonResponse)
-		log.Println(string(jsonResponse))
+		jsonResponse, jsonError := json.Marshal(randomWord)
 		if jsonError != nil {
 		  fmt.Println("Unable to encode JSON")
 		}
-		
-		// fmt.Println(string(jsonResponse))
-		
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		// io.WriteString(w, randomWord)
-		// w.Write(randomWord)
-
-		// if err != nil {
-		// 	log.Println(err)
-		// }
-		// w.Header().Set("Content-Type", "application/json")
+    w.Header().Set("Content-Type", "application/json")
 		w.Write(jsonResponse)
-		// json.NewEncoder(w).Encode()
 	}
 	
 	
