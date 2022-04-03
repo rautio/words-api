@@ -69,6 +69,7 @@ func main() {
 		r2, _ :=  strconv.Atoi(mostFreqWords[j][1])
 		return r1 > r2
 	})
+
 	wordHandler := func(w http.ResponseWriter, req *http.Request) {
     vars := mux.Vars(req)
 		word := vars["word"]
