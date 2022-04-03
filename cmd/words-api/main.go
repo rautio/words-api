@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -22,6 +23,8 @@ type Word struct {
 }
 
 func main() {
+	// Seeding to randomize words by time
+	rand.Seed(time.Now().UTC().UnixNano())
 	// Read the main words file
 	file, err := os.Open("../words-api/assets/words.txt")
 	if err != nil {
@@ -59,7 +62,6 @@ func main() {
 	}
 
 	randomWordHandler := func(w http.ResponseWriter, req *http.Request) {
-		log.Println(req)
 		req.ParseForm()
 		_, hasLength := req.Form["length"]
 
