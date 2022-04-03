@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -22,11 +24,25 @@ type Word struct {
 	commonalityScore int    `json: "commonalityScore`
 }
 
-func main() {
-	// Seeding to randomize words by time
-	rand.Seed(time.Now().UTC().UnixNano())
-	// Read the main words file
-	file, err := os.Open("../words-api/assets/words.txt")
+
+func readCsvFile(filePath string) [][]string {
+	f, err := os.Open(filePath)
+	if err != nil {
+			log.Fatal("Unable to read input file " + filePath, err)
+	}
+	defer f.Close()
+
+	csvReader := csv.NewReader(f)
+	records, err := csvReader.ReadAll()
+	if err != nil {
+			log.Fatal("Unable to parse file as CSV for " + filePath, err)
+	}
+
+	return records
+}
+
+func readWordsTxtFile(filePath string) []string {
+	file, err := os.Open(filePath)
 	if err != nil {
 			log.Fatal(err)
 	}
@@ -37,9 +53,22 @@ func main() {
 	}()
 	rawWords, err := ioutil.ReadAll(file)
 	words := strings.Split(string(rawWords), "\n")
-	// Parse it into separate word lengths to power the word length API later
+	return words
 
+}
 
+func main() {
+	// Seeding to randomize words by time
+	rand.Seed(time.Now().UTC().UnixNano())
+	// Read the main words file
+	words := readWordsTxtFile("../words-api/assets/words.txt")
+	// Read frequency records
+	mostFreqWords := readCsvFile("../words-api/assets/unigram_freq.csv")
+	sort.Slice(mostFreqWords, func(i, j int) bool {
+		r1, _ := strconv.Atoi(mostFreqWords[i][1])
+		r2, _ :=  strconv.Atoi(mostFreqWords[j][1])
+		return r1 > r2
+	})
 	wordHandler := func(w http.ResponseWriter, req *http.Request) {
     vars := mux.Vars(req)
 		word := vars["word"]
@@ -64,27 +93,30 @@ func main() {
 	randomWordHandler := func(w http.ResponseWriter, req *http.Request) {
 		req.ParseForm()
 		_, hasLength := req.Form["length"]
+		length, _ := strconv.Atoi(req.URL.Query().Get("length"))
 
-		// shuffle the order of words 
-		dest := make([]string, len(words))
-		perm := rand.Perm(len(words))
-		for i, v := range perm {
-				dest[v] = string(words[i])
-		}
-		randomWord := Word{dest[0], 0}
-		if hasLength {
-			length, err := strconv.Atoi(req.URL.Query().Get("length"))
-			if err != nil {
-					log.Fatal(err)
-			}
-			for _, s := range dest {
-				if len(s) == length {
-					randomWord = Word{s, 0}
-					break;
+		// Get the top 10,000 most common words for the length
+		wordLimit := 1000
+		wordsToChoose := make([]string, wordLimit)	
+    i := 0
+		added := 0
+		for added < wordLimit && i < len(mostFreqWords) {
+			if (hasLength) {
+				if (len(mostFreqWords[i][0]) == length) {
+					wordsToChoose[added] = mostFreqWords[i][0]
+					added++
 				}
+			} else {
+				wordsToChoose[added] = mostFreqWords[i][0]
+				added++
 			}
+			i++
 		}
-		jsonResponse, jsonError := json.Marshal(randomWord)
+		// Choose a word at random from the most frequent list
+		randIdx := rand.Intn(wordLimit)
+		randomWord := wordsToChoose[randIdx]
+		result := Word{randomWord, 0}
+		jsonResponse, jsonError := json.Marshal(result)
 		if jsonError != nil {
 		  fmt.Println("Unable to encode JSON")
 		}
