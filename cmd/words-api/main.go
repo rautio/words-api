@@ -74,8 +74,6 @@ func main() {
 		word := vars["word"]
 		for _, curWord := range words {
 			if curWord == word {
-				// io.WriteString(w, curWord)
-				w.Header().Set("Content-Type", "application/json")
 				result := Word{curWord, 0}
 				w.Header().Set("Content-Type", "application/json")
 				jsonResponse, _ := json.Marshal(result)
@@ -83,11 +81,14 @@ func main() {
 				return
 			}
 		}
-		http.Error(w, "None found", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "None Found", http.StatusBadRequest)
+		return
 	}
 
 	wordsHandler := func(w http.ResponseWriter, req *http.Request) {
 		io.WriteString(w, strings.Join(words[:], "\n"))
+		return
 	}
 
 	randomWordHandler := func(w http.ResponseWriter, req *http.Request) {
@@ -122,6 +123,7 @@ func main() {
 		}
     w.Header().Set("Content-Type", "application/json")
 		w.Write(jsonResponse)
+		return
 	}
 	
 	
