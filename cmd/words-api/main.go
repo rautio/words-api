@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,10 +29,12 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 	// Read the main words file
 	// TODO: Create a map of word: <Word> for easier lookups later
-	words := ReadTxtFileByLine("../../assets/words.txt")
+	absPath, _ := filepath.Abs("../../assets/words.txt")
+	words := ReadTxtFileByLine(absPath)
 	// Read frequency records
 	// TODO: Convert frequency count to a frequency score and return in the json data
-	mostFreqWords := ReadCsvFile("../../assets/unigram_freq.csv")
+	absPathCsv, _ := filepath.Abs("../../assets/unigram_freq.csv")
+	mostFreqWords := ReadCsvFile(absPathCsv)
 	// Sort by the frequency count
 	sort.Slice(mostFreqWords, func(i, j int) bool {
 		r1, _ := strconv.Atoi(mostFreqWords[i][1])
