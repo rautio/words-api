@@ -121,16 +121,18 @@ func main() {
 	// Router setup
 	router := mux.NewRouter().StrictSlash(true)
 
+	port := getPort()
+
 	router.HandleFunc("/random", randomWordHandler).Methods("GET","OPTIONS")
-	log.Println("Listening for requests at http://localhost:9001/random")
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/random", port))
 
 	router.HandleFunc("/word/{word}", wordHandler).Methods("GET","OPTIONS")
-	log.Println("Listening for requests at http://localhost:9001/word")
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/word", port))
 
 	router.HandleFunc("/word", wordsHandler).Methods("GET","OPTIONS")
-	log.Println("Listening for requests at http://localhost:9001/words")
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/words", port))
 
 	// TODO: Return a API doc page w/ examples like type ahead
 	http.Handle("/", router)
-	http.ListenAndServe(getPort(), handlers.CORS()(router))
+	http.ListenAndServe(port, handlers.CORS()(router))
 }
