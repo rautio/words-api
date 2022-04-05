@@ -127,10 +127,10 @@ func main() {
 	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/random", port))
 
 	router.HandleFunc("/word/{word}", wordHandler).Methods("GET","OPTIONS")
-	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/word", port))
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/word/{word}", port))
 
 	router.HandleFunc("/word", wordsHandler).Methods("GET","OPTIONS")
-	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/words", port))
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/word", port))
 
 	// TODO: Return a API doc page w/ examples like type ahead
 	http.Handle("/", router)
