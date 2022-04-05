@@ -29,11 +29,11 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 	// Read the main words file
 	// TODO: Create a map of word: <Word> for easier lookups later
-	absPath, _ := filepath.Abs("../../assets/words.txt")
+	absPath, _ := filepath.Abs("assets/words.txt")
 	words := ReadTxtFileByLine(absPath)
 	// Read frequency records
 	// TODO: Convert frequency count to a frequency score and return in the json data
-	absPathCsv, _ := filepath.Abs("../../assets/unigram_freq.csv")
+	absPathCsv, _ := filepath.Abs("assets/unigram_freq.csv")
 	mostFreqWords := ReadCsvFile(absPathCsv)
 	// Sort by the frequency count
 	sort.Slice(mostFreqWords, func(i, j int) bool {
@@ -132,5 +132,5 @@ func main() {
 
 	// TODO: Return a API doc page w/ examples like type ahead
 	http.Handle("/", router)
-	http.ListenAndServe(":9001", handlers.CORS()(router))
+	http.ListenAndServe(getPort(), handlers.CORS()(router))
 }

@@ -36,3 +36,10 @@ func ReadTxtFileByLine(filePath string) []string {
 	words := strings.Split(string(rawWords), "\n")
 	return words
 }
+func getPort() string {
+  p := os.Getenv("PORT")
+  if p != "" {
+    return ":" + p
+  }
+  return ":9000"
+}
