@@ -1,12 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -15,16 +17,28 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 )
 
 type Word struct {
 	Word             string `json:"word"`
-	commonalityScore int    `json: "commonalityScore`
 }
 
 
 
 func main() {
+	// Connect to DB
+  db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+  if err != nil {
+    log.Fatal(err)
+  }
+	// Initialize the DB
+	db.Exec(`CREATE TABLE IF NOT EXISTS wordle (
+		id UUID NOT NULL PRIMARY KEY DEFAULT uuid_generate_v4(),
+		word VARCHAR (20) NOT NULL,
+		created_on TIMESTAMP NOT NULL
+	)`)
+	defer db.Close()
 	// Seeding to randomize words by time
 	rand.Seed(time.Now().UTC().UnixNano())
 	// Read the main words file
@@ -56,7 +70,7 @@ func main() {
 		// Iterate through all known words and look for the matching one
 		for _, curWord := range words {
 			if curWord == word {
-				result := Word{curWord, 0}
+				result := Word{curWord}
 				w.Header().Set("Content-Type", "application/json")
 				jsonResponse, _ := json.Marshal(result)
 				w.Write(jsonResponse)
@@ -108,7 +122,57 @@ func main() {
 		// Choose a word at random from the most frequent sub-list
 		randIdx := rand.Intn(wordLimit)
 		randomWord := wordsToChoose[randIdx]
-		result := Word{randomWord, 0}
+		result := Word{randomWord}
+		jsonResponse, jsonError := json.Marshal(result)
+		if jsonError != nil {
+		  fmt.Println("Unable to encode JSON")
+		}
+    w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonResponse)
+		return
+	}
+
+	createWordleHandler := func(w http.ResponseWriter, req *http.Request) {
+		word := req.FormValue("word")
+		if (word == "") {
+			// If there was no match above then it is an unknown word
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "word:<string> is required", http.StatusBadRequest)
+			return
+		}
+		// Connect to DB
+		db, _ := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+		res, err := db.Exec(`INSERT INTO wordle (word)
+		VALUES ($1)`, word)
+		defer db.Close()
+		CheckError(err)
+		lid, _ := res.LastInsertId()
+		result := map[string]interface{}{ "id": lid }
+		jsonResponse, jsonError := json.Marshal(result)
+		if jsonError != nil {
+		  fmt.Println("Unable to encode JSON")
+		}
+    w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonResponse)
+		return
+	}
+
+	getWordleHandler := func(w http.ResponseWriter, req *http.Request) {
+    vars := mux.Vars(req)
+		id := vars["id"]
+		var resultId string
+		var word string
+		// Connect to DB
+		db, _ := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+		err := db.QueryRow(`SELECT id, word FROM wordle WHERE id=$1;`, id).Scan(&resultId, &word)
+		defer db.Close()
+		if err != nil {
+			// If there was no match above then it is an unknown word
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "None Found", http.StatusBadRequest)
+			return
+		}
+		result := map[string]interface{}{ "id": resultId, "word": word }
 		jsonResponse, jsonError := json.Marshal(result)
 		if jsonError != nil {
 		  fmt.Println("Unable to encode JSON")
@@ -132,7 +196,21 @@ func main() {
 	router.HandleFunc("/word", wordsHandler).Methods("GET","OPTIONS")
 	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/word", port))
 
+	router.HandleFunc("/wordle", createWordleHandler).Methods("POST","OPTIONS")
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle", port))
+
+	router.HandleFunc("/wordle/{id}", getWordleHandler).Methods("GET","OPTIONS")
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle/{id}", port))
+
+
 	// TODO: Return a API doc page w/ examples like type ahead
 	http.Handle("/", router)
 	http.ListenAndServe(port, handlers.CORS()(router))
+}
+
+
+func CheckError(err error) {
+	if err != nil {
+			panic(err)
+	}
 }
