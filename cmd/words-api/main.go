@@ -180,8 +180,12 @@ func main() {
 		db, _ := sql.Open("postgres", getDatabaseUrl())
 		err := db.QueryRow(`SELECT id, word FROM wordle WHERE id=$1;`, id).Scan(&resultId, &word)
 		defer db.Close()
+		log.Println("results")
+		log.Println(resultId)
+		log.Println(word)
 		if err != nil {
 			log.Println("not found")
+			log.Println(err)
 			// If there was no match above then it is an unknown word
 			w.WriteHeader(http.StatusBadRequest)
 			http.Error(w, "None Found", http.StatusBadRequest)
