@@ -153,7 +153,7 @@ func main() {
 			return
 		}
 		// Connect to DB
-		lastInsertId := 0
+		var lastInsertId []uint8; // uuid v4 format
 		db, _ := sql.Open("postgres", getDatabaseUrl())
 		err := db.QueryRow(`INSERT INTO wordle (word)
 		VALUES ($1) RETURNING id`, word).Scan(&lastInsertId)
