@@ -26,9 +26,14 @@ type Word struct {
 
 
 
+func getDatabaseUrl () string {
+	return os.Getenv("DATABASE_URL")
+}
+
+
 func main() {
 	// Connect to DB
-  db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+  db, err := sql.Open("postgres", getDatabaseUrl())
   if err != nil {
     log.Fatal(err)
   }
@@ -38,6 +43,13 @@ func main() {
 		word VARCHAR (20) NOT NULL,
 		created_on TIMESTAMP NOT NULL
 	)`)
+
+	pingErr := db.Ping()
+	if pingErr != nil {
+		log.Println(pingErr)
+    log.Fatal(pingErr)
+	}
+
 	defer db.Close()
 	// Seeding to randomize words by time
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -141,13 +153,13 @@ func main() {
 			return
 		}
 		// Connect to DB
-		db, _ := sql.Open("postgres", os.Getenv("DATABASE_URL"))
-		res, err := db.Exec(`INSERT INTO wordle (word)
-		VALUES ($1)`, word)
+		lastInsertId := 0
+		db, _ := sql.Open("postgres", getDatabaseUrl())
+		err := db.QueryRow(`INSERT INTO wordle (word)
+		VALUES ($1) RETURNING id`, word).Scan(&lastInsertId)
 		defer db.Close()
 		CheckError(err)
-		lid, _ := res.LastInsertId()
-		result := map[string]interface{}{ "id": lid }
+		result := map[string]interface{}{ "id": lastInsertId }
 		jsonResponse, jsonError := json.Marshal(result)
 		if jsonError != nil {
 		  fmt.Println("Unable to encode JSON")
@@ -163,7 +175,7 @@ func main() {
 		var resultId string
 		var word string
 		// Connect to DB
-		db, _ := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+		db, _ := sql.Open("postgres", getDatabaseUrl())
 		err := db.QueryRow(`SELECT id, word FROM wordle WHERE id=$1;`, id).Scan(&resultId, &word)
 		defer db.Close()
 		if err != nil {
