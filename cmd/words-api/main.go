@@ -160,7 +160,7 @@ func main() {
 		VALUES ($1) RETURNING id`, word).Scan(&lastInsertId)
 		defer db.Close()
 		CheckError(err)
-		result := map[string]interface{}{ "id": lastInsertId }
+		result := map[string]interface{}{ "id": string([]byte(lastInsertId)) }
 		jsonResponse, jsonError := json.Marshal(result)
 		if jsonError != nil {
 		  fmt.Println("Unable to encode JSON")
