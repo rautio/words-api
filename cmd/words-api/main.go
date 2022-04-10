@@ -174,11 +174,14 @@ func main() {
 		id := vars["id"]
 		var resultId string
 		var word string
+		log.Println("Getting id: ")
+		log.Println(id)
 		// Connect to DB
 		db, _ := sql.Open("postgres", getDatabaseUrl())
 		err := db.QueryRow(`SELECT id, word FROM wordle WHERE id=$1;`, id).Scan(&resultId, &word)
 		defer db.Close()
 		if err != nil {
+			log.Println("not found")
 			// If there was no match above then it is an unknown word
 			w.WriteHeader(http.StatusBadRequest)
 			http.Error(w, "None Found", http.StatusBadRequest)
