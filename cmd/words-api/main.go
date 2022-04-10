@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -172,19 +173,20 @@ func main() {
 	getWordleHandler := func(w http.ResponseWriter, req *http.Request) {
     vars := mux.Vars(req)
 		id := vars["id"]
+		uId, uuidErr := uuid.Parse(id)
+		if uuidErr != nil {
+			log.Println(uuidErr)
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Invalid id", http.StatusBadRequest)
+			return
+		}
 		var resultId string
 		var word string
-		log.Println("Getting id: ")
-		log.Println(id)
 		// Connect to DB
 		db, _ := sql.Open("postgres", getDatabaseUrl())
-		err := db.QueryRow(`SELECT id, word FROM wordle WHERE id=$1;`, id).Scan(&resultId, &word)
+		err := db.QueryRow(`SELECT id, word FROM wordle WHERE id=$1;`, uId).Scan(&resultId, &word)
 		defer db.Close()
-		log.Println("results")
-		log.Println(resultId)
-		log.Println(word)
 		if err != nil {
-			log.Println("not found")
 			log.Println(err)
 			// If there was no match above then it is an unknown word
 			w.WriteHeader(http.StatusBadRequest)
@@ -194,6 +196,7 @@ func main() {
 		result := map[string]interface{}{ "id": resultId, "word": word }
 		jsonResponse, jsonError := json.Marshal(result)
 		if jsonError != nil {
+			log.Println(jsonError)
 		  fmt.Println("Unable to encode JSON")
 		}
     w.Header().Set("Content-Type", "application/json")
