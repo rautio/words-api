@@ -219,7 +219,7 @@ func main() {
 
 	// TODO: Return a API doc page w/ examples like type ahead
 	http.Handle("/", router)
-	http.ListenAndServe(port, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(router))
+	http.ListenAndServe(port, handlers.CORS(handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization" }), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"}),handlers.AllowedOrigins([]string{"*"}))(router))
 }
 
 
