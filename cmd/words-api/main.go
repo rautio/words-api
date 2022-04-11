@@ -141,6 +141,9 @@ func main() {
 		word := req.FormValue("word")
 		if (word == "") {
 			// If there was no match above then it is an unknown word
+			log.Println("No word provided")
+			log.Println(req.FormValue("word"))
+			log.Println(req.Form)
 			w.WriteHeader(http.StatusBadRequest)
 			http.Error(w, "word:<string> is required", http.StatusBadRequest)
 			return
