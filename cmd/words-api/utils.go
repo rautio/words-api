@@ -43,3 +43,7 @@ func getPort() string {
   }
   return ":9000"
 }
+
+func getDatabaseUrl () string {
+	return os.Getenv("DATABASE_URL")
+}

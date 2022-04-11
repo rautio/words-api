@@ -8,7 +8,6 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -24,13 +23,6 @@ import (
 type Word struct {
 	Word             string `json:"word"`
 }
-
-
-
-func getDatabaseUrl () string {
-	return os.Getenv("DATABASE_URL")
-}
-
 
 func main() {
 	// Connect to DB
@@ -227,7 +219,7 @@ func main() {
 
 	// TODO: Return a API doc page w/ examples like type ahead
 	http.Handle("/", router)
-	http.ListenAndServe(port, handlers.CORS()(router))
+	http.ListenAndServe(port, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(router))
 }
 
 
