@@ -138,30 +138,37 @@ func main() {
 	}
 
 	createWordleHandler := func(w http.ResponseWriter, req *http.Request) {
-		word := req.FormValue("word")
-		if (word == "") {
-			// If there was no match above then it is an unknown word
-			log.Println("No word provided")
-			log.Println(req.FormValue("word"))
-			log.Println(req.Form)
-			w.WriteHeader(http.StatusBadRequest)
-			http.Error(w, "word:<string> is required", http.StatusBadRequest)
+		// word := req.FormValue("word")
+		var postBody map[string]interface{}
+		decoder := json.NewDecoder(req.Body)
+		decodePostErr := decoder.Decode(&postBody)
+		if err != nil {
+			log.Println(decodePostErr)
+			panic(decodePostErr)
+		}
+		if word, ok := postBody["word"]; ok {
+			// Connect to DB
+			var lastInsertId []uint8; // uuid v4 format
+			db, _ := sql.Open("postgres", getDatabaseUrl())
+			err := db.QueryRow(`INSERT INTO wordle (word)
+			VALUES ($1) RETURNING id`, word).Scan(&lastInsertId)
+			defer db.Close()
+			CheckError(err)
+			result := map[string]interface{}{ "id": string([]byte(lastInsertId)) }
+			jsonResponse, jsonError := json.Marshal(result)
+			if jsonError != nil {
+				fmt.Println("Unable to encode JSON")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(jsonResponse)
 			return
 		}
-		// Connect to DB
-		var lastInsertId []uint8; // uuid v4 format
-		db, _ := sql.Open("postgres", getDatabaseUrl())
-		err := db.QueryRow(`INSERT INTO wordle (word)
-		VALUES ($1) RETURNING id`, word).Scan(&lastInsertId)
-		defer db.Close()
-		CheckError(err)
-		result := map[string]interface{}{ "id": string([]byte(lastInsertId)) }
-		jsonResponse, jsonError := json.Marshal(result)
-		if jsonError != nil {
-		  fmt.Println("Unable to encode JSON")
-		}
-    w.Header().Set("Content-Type", "application/json")
-		w.Write(jsonResponse)
+		// Missing word in the post body
+		log.Println("No word provided")
+		log.Println(req.FormValue("word"))
+		log.Println(req.Form)
+		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "word is required", http.StatusBadRequest)
 		return
 	}
 
