@@ -138,7 +138,6 @@ func main() {
 	}
 
 	createWordleHandler := func(w http.ResponseWriter, req *http.Request) {
-		// word := req.FormValue("word")
 		var postBody map[string]interface{}
 		decoder := json.NewDecoder(req.Body)
 		decodePostErr := decoder.Decode(&postBody)
@@ -154,7 +153,7 @@ func main() {
 				source = fmt.Sprintf("%v", src)
 			}
 			db, _ := sql.Open("postgres", getDatabaseUrl())
-			err := db.QueryRow(`INSERT INTO wordle (word, $2)
+			err := db.QueryRow(`INSERT INTO wordle (word, source)
 			VALUES ($1, $2) RETURNING id`, word, source).Scan(&lastInsertId)
 			defer db.Close()
 			CheckError(err)
@@ -173,6 +172,43 @@ func main() {
 		log.Println(req.Form)
 		w.WriteHeader(http.StatusBadRequest)
 		http.Error(w, "word is required", http.StatusBadRequest)
+		return
+	}
+
+
+	storeSessionHandler := func(w http.ResponseWriter, req *http.Request) {
+		var postBody map[string]interface{}
+		decoder := json.NewDecoder(req.Body)
+		decodePostErr := decoder.Decode(&postBody)
+		if err != nil {
+			log.Println(decodePostErr)
+			panic(decodePostErr)
+		}
+		wordleId := postBody["wordle_id"]
+		guesses := postBody["guesses"]
+		correct := postBody["correct"]
+		// Connect to DB
+		var lastInsertId []uint8; // uuid v4 format
+		db, _ := sql.Open("postgres", getDatabaseUrl())
+		err := db.QueryRow(`INSERT INTO session (wordle_id, guesses, correct)
+		VALUES ($1, $2, $3) RETURNING id`, wordleId, guesses, correct).Scan(&lastInsertId)
+		defer db.Close()
+		CheckError(err)
+		result := map[string]interface{}{ "id": string([]byte(lastInsertId)) }
+		jsonResponse, jsonError := json.Marshal(result)
+		if jsonError != nil {
+			fmt.Println("Unable to encode JSON")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonResponse)
+		// return
+		
+		// Missing word in the post body
+		// log.Println("No word provided")
+		// log.Println(req.FormValue("word"))
+		// log.Println(req.Form)
+		// w.WriteHeader(http.StatusBadRequest)
+		// http.Error(w, "word is required", http.StatusBadRequest)
 		return
 	}
 
@@ -227,8 +263,8 @@ func main() {
 	router.HandleFunc("/wordle", createWordleHandler).Methods("POST","OPTIONS")
 	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle", port))
 
-	// router.HandleFunc("/session", storeSessionHandler).Methods("POST","OPTIONS")
-	// log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/session", port))
+	router.HandleFunc("/session", storeSessionHandler).Methods("POST","OPTIONS")
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/session", port))
 
 	router.HandleFunc("/wordle/{id}", getWordleHandler).Methods("GET","OPTIONS")
 	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle/{id}", port))
