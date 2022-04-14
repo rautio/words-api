@@ -273,8 +273,8 @@ func main() {
 	router.HandleFunc("/wordle", createWordleHandler).Methods("POST","OPTIONS")
 	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle", port))
 
-	router.HandleFunc("/session", storeSessionHandler).Methods("POST","OPTIONS")
-	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/session", port))
+	router.HandleFunc("/wordle-session", storeSessionHandler).Methods("POST","OPTIONS")
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle-session", port))
 
 	router.HandleFunc("/wordle/{id}", getWordleHandler).Methods("GET","OPTIONS")
 	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle/{id}", port))
