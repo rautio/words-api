@@ -30,11 +30,20 @@ func main() {
   if err != nil {
     log.Fatal(err)
   }
-	// Initialize the DB
+	// Wordle table
 	db.Exec(`CREATE TABLE IF NOT EXISTS wordle (
 		id UUID NOT NULL PRIMARY KEY DEFAULT uuid_generate_v4(),
 		word VARCHAR (20) NOT NULL,
-		created_on TIMESTAMP NOT NULL
+		create_time TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_DATE
+	)`)
+	// Session table
+	db.Exec(`CREATE TABLE IF NOT EXISTS session (
+		id UUID NOT NULL PRIMARY KEY DEFAULT uuid_generate_v4(),
+		wordle_id UUID NOT NULL,
+		correct BOOLEAN,
+		guessses JSON,
+		word VARCHAR (20) NOT NULL,
+		create_time TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_DATE
 	)`)
 
 	pingErr := db.Ping()
@@ -224,9 +233,10 @@ func main() {
 		}
 		var resultId string
 		var word string
+		var source string
 		// Connect to DB
 		db, _ := sql.Open("postgres", getDatabaseUrl())
-		err := db.QueryRow(`SELECT id, word FROM wordle WHERE id=$1;`, uId).Scan(&resultId, &word)
+		err := db.QueryRow(`SELECT id, word, source FROM wordle WHERE id=$1;`, uId).Scan(&resultId, &word, &source)
 		defer db.Close()
 		if err != nil {
 			log.Println(err)
@@ -235,7 +245,7 @@ func main() {
 			http.Error(w, "None Found", http.StatusBadRequest)
 			return
 		}
-		result := map[string]interface{}{ "id": resultId, "word": word }
+		result := map[string]interface{}{ "id": resultId, "word": word, "source": source }
 		jsonResponse, jsonError := json.Marshal(result)
 		if jsonError != nil {
 			log.Println(jsonError)
