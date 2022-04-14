@@ -149,9 +149,13 @@ func main() {
 		if word, ok := postBody["word"]; ok {
 			// Connect to DB
 			var lastInsertId []uint8; // uuid v4 format
+			source := "n/a";
+			if src, ok := postBody["source"]; ok {
+				source = fmt.Sprintf("%v", src)
+			}
 			db, _ := sql.Open("postgres", getDatabaseUrl())
-			err := db.QueryRow(`INSERT INTO wordle (word)
-			VALUES ($1) RETURNING id`, word).Scan(&lastInsertId)
+			err := db.QueryRow(`INSERT INTO wordle (word, $2)
+			VALUES ($1, $2) RETURNING id`, word, source).Scan(&lastInsertId)
 			defer db.Close()
 			CheckError(err)
 			result := map[string]interface{}{ "id": string([]byte(lastInsertId)) }
@@ -222,6 +226,9 @@ func main() {
 
 	router.HandleFunc("/wordle", createWordleHandler).Methods("POST","OPTIONS")
 	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle", port))
+
+	// router.HandleFunc("/session", storeSessionHandler).Methods("POST","OPTIONS")
+	// log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/session", port))
 
 	router.HandleFunc("/wordle/{id}", getWordleHandler).Methods("GET","OPTIONS")
 	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle/{id}", port))
