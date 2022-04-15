@@ -189,7 +189,7 @@ func main() {
 		var postBody map[string]interface{}
 		decoder := json.NewDecoder(req.Body)
 		decodePostErr := decoder.Decode(&postBody)
-		if err != nil {
+		if decodePostErr != nil {
 			log.Println(decodePostErr)
 			panic(decodePostErr)
 		}
