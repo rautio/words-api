@@ -261,7 +261,7 @@ func main() {
 
 	port := getPort()
 
-	router.HandleFunc("/random", randomWordHandler).Methods("GET","OPTIONS")
+	router.HandleFunc2("/random", randomWordHandler).Methods("GET","OPTIONS")
 	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/random", port))
 
 	router.HandleFunc("/word/{word}", wordHandler).Methods("GET","OPTIONS")
