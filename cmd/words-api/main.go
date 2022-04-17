@@ -30,18 +30,18 @@ func main() {
   if err != nil {
     log.Fatal(err)
   }
-	// Wordle table
-	db.Exec(`CREATE TABLE IF NOT EXISTS wordle (
+	// Word Guess table
+	db.Exec(`CREATE TABLE IF NOT EXISTS guessr (
 		id UUID NOT NULL PRIMARY KEY DEFAULT uuid_generate_v4(),
 		word VARCHAR (20) NOT NULL,
 		create_time TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_DATE
 	)`)
 	// Session table
-	db.Exec(`CREATE TABLE IF NOT EXISTS session (
+	db.Exec(`CREATE TABLE IF NOT EXISTS guessr_session (
 		id UUID NOT NULL PRIMARY KEY DEFAULT uuid_generate_v4(),
-		wordle_id UUID NOT NULL,
+		guessr_id UUID NOT NULL,
 		correct BOOLEAN,
-		guessses JSON,
+		guesses JSON,
 		word VARCHAR (20) NOT NULL,
 		create_time TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_DATE
 	)`)
@@ -146,7 +146,7 @@ func main() {
 		return
 	}
 
-	createWordleHandler := func(w http.ResponseWriter, req *http.Request) {
+	createGuessrHandler := func(w http.ResponseWriter, req *http.Request) {
 		var postBody map[string]interface{}
 		decoder := json.NewDecoder(req.Body)
 		decodePostErr := decoder.Decode(&postBody)
@@ -162,7 +162,7 @@ func main() {
 				source = fmt.Sprintf("%v", src)
 			}
 			db, _ := sql.Open("postgres", getDatabaseUrl())
-			err := db.QueryRow(`INSERT INTO wordle (word, source)
+			err := db.QueryRow(`INSERT INTO guessr (word, source)
 			VALUES ($1, $2) RETURNING id`, word, source).Scan(&lastInsertId)
 			defer db.Close()
 			CheckError(err)
@@ -193,14 +193,14 @@ func main() {
 			log.Println(decodePostErr)
 			panic(decodePostErr)
 		}
-		wordleId := postBody["wordle_id"]
+		guessrId := postBody["guessr"]
 		guesses := postBody["guesses"]
 		correct := postBody["correct"]
 		// Connect to DB
 		var lastInsertId []uint8; // uuid v4 format
 		db, _ := sql.Open("postgres", getDatabaseUrl())
-		err := db.QueryRow(`INSERT INTO session (wordle_id, guesses, correct)
-		VALUES ($1, $2, $3) RETURNING id`, wordleId, guesses, correct).Scan(&lastInsertId)
+		err := db.QueryRow(`INSERT INTO guessr_session (guessr_id, guesses, correct)
+		VALUES ($1, $2, $3) RETURNING id`, guessrId, guesses, correct).Scan(&lastInsertId)
 		defer db.Close()
 		CheckError(err)
 		result := map[string]interface{}{ "id": string([]byte(lastInsertId)) }
@@ -221,7 +221,7 @@ func main() {
 		return
 	}
 
-	getWordleHandler := func(w http.ResponseWriter, req *http.Request) {
+	getGuessrHandler := func(w http.ResponseWriter, req *http.Request) {
     vars := mux.Vars(req)
 		id := vars["id"]
 		uId, uuidErr := uuid.Parse(id)
@@ -236,7 +236,7 @@ func main() {
 		var source string
 		// Connect to DB
 		db, _ := sql.Open("postgres", getDatabaseUrl())
-		err := db.QueryRow(`SELECT id, word, source FROM wordle WHERE id=$1;`, uId).Scan(&resultId, &word, &source)
+		err := db.QueryRow(`SELECT id, word, source FROM guessr WHERE id=$1;`, uId).Scan(&resultId, &word, &source)
 		defer db.Close()
 		if err != nil {
 			log.Println(err)
@@ -270,14 +270,14 @@ func main() {
 	router.HandleFunc("/word", wordsHandler).Methods("GET","OPTIONS")
 	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/word", port))
 
-	router.HandleFunc("/wordle", createWordleHandler).Methods("POST","OPTIONS")
-	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle", port))
+	router.HandleFunc("/guessr", createGuessrHandler).Methods("POST","OPTIONS")
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/guessr", port))
 
-	router.HandleFunc("/wordle-session", storeSessionHandler).Methods("POST","OPTIONS")
-	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle-session", port))
+	router.HandleFunc("/guessr-session", storeSessionHandler).Methods("POST","OPTIONS")
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/guessr-session", port))
 
-	router.HandleFunc("/wordle/{id}", getWordleHandler).Methods("GET","OPTIONS")
-	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/wordle/{id}", port))
+	router.HandleFunc("/guessr/{id}", getGuessrHandler).Methods("GET","OPTIONS")
+	log.Println(fmt.Sprintf("Listening for requests at http://localhost%s/guessr/{id}", port))
 
 
 	// TODO: Return a API doc page w/ examples like type ahead

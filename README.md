@@ -8,4 +8,4 @@ Deployed to: [https://turbo-words-api.herokuapp.com/](https://turbo-words-api.he
 
 Currently Powering:
 
-- Word Guessr: [Live Demo](https://turbo-wordle.netlify.app/)
+- Word Guessr: [Live Demo](https://word-guessr.netlify.app/)
