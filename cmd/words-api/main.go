@@ -45,7 +45,6 @@ func main() {
 		guessr_id UUID NOT NULL,
 		correct BOOLEAN,
 		guesses JSON,
-		word VARCHAR (20) NOT NULL,
 		create_time TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_DATE
 	)`)
 
