@@ -30,6 +30,8 @@ func main() {
   if err != nil {
     log.Fatal(err)
   }
+	// Need the uuid extension if it doesn't exist
+	db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`)
 	// Word Guess table
 	db.Exec(`CREATE TABLE IF NOT EXISTS guessr (
 		id UUID NOT NULL PRIMARY KEY DEFAULT uuid_generate_v4(),
