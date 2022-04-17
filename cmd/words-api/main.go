@@ -210,14 +210,6 @@ func main() {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(jsonResponse)
-		// return
-		
-		// Missing word in the post body
-		// log.Println("No word provided")
-		// log.Println(req.FormValue("word"))
-		// log.Println(req.Form)
-		// w.WriteHeader(http.StatusBadRequest)
-		// http.Error(w, "word is required", http.StatusBadRequest)
 		return
 	}
 
