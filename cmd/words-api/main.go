@@ -34,6 +34,7 @@ func main() {
 	db.Exec(`CREATE TABLE IF NOT EXISTS guessr (
 		id UUID NOT NULL PRIMARY KEY DEFAULT uuid_generate_v4(),
 		word VARCHAR (20) NOT NULL,
+		source VARCHAR(20),
 		create_time TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_DATE
 	)`)
 	// Session table
