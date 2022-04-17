@@ -99,7 +99,6 @@ func main() {
 	}
 
 	wordsHandler := func(w http.ResponseWriter, req *http.Request) {
-		// TODO: Return in an array of objects format
 		io.WriteString(w, strings.Join(words[:], "\n"))
 		return
 	}
