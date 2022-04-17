@@ -195,7 +195,7 @@ func main() {
 			log.Println(decodePostErr)
 			panic(decodePostErr)
 		}
-		guessrId := postBody["guessr"]
+		guessrId := postBody["guessr_id"]
 		guesses := postBody["guesses"]
 		correct := postBody["correct"]
 		// Connect to DB
